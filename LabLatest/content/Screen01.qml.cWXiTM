@@ -1,0 +1,653 @@
+import QtQuick 6.2
+import QtQuick.Controls 6.2
+import LabLatest
+import QtQuick3D
+import Quick3DAssets.Reductor
+import QtQuick3D.Helpers 6.4
+import com.example 1.0
+import QtQuick.Layouts 6.3
+import QtQuick.Controls
+import QtCharts
+import QtMultimedia
+
+
+Rectangle {
+    property real  K_load: 1.3;
+    property real  K_dvig: 0.169;
+    property real i : (53/31)**6
+    property real mass : 3
+    property real ind2angl:3.6
+    property real sind2angl:0.36
+    property real w:0
+    property real kpd: 0
+
+    property real M_dvig:0
+    property bool started:false
+    width: 0
+    height: 0
+    color: "#303030"
+
+
+
+
+    Item {
+        id: __materialLibrary__
+
+        DefaultMaterial {
+            id: defaultMaterial
+            objectName: "New Material"
+        }
+    }
+
+
+    Item {
+        x: 0
+        y: 0
+        width: 190
+        height: 105
+        scale: 0.6
+
+
+        Timer {
+            id: tarirovkaTimer
+            interval: 1000
+            running: false
+            repeat: true
+            onTriggered: {
+                animationDvigIndicator.to = - gradDvigSlider.value * mass*ind2angl / K_dvig
+                animationDvigIndicator.duration = 800
+                animationDvigIndicator.running = true
+                animationDvigIndicator.from = - gradDvigSlider.value * mass*ind2angl / K_dvig
+
+                animationDvigSmallIndicator.to = gradDvigSlider.value * mass*sind2angl / K_dvig
+                animationDvigSmallIndicator.duration = 800
+                animationDvigSmallIndicator.running = true
+                animationDvigSmallIndicator.from = gradDvigSlider.value * mass *sind2angl / K_dvig
+
+                animationNagrIndicator.to = - gradNagrSlider.value * mass*ind2angl / K_load
+                animationNagrIndicator.duration = 800
+                animationNagrIndicator.running = true
+                animationNagrIndicator.from = - gradNagrSlider.value * mass*ind2angl / K_load
+
+                animationNagrSmallIndicator.to = gradNagrSlider.value * mass *sind2angl/K_load
+                animationNagrSmallIndicator.duration = 800
+                animationNagrSmallIndicator.running = true
+                animationNagrSmallIndicator.from = gradNagrSlider.value * mass *sind2angl/K_load
+                reductor.nagrAngle = gradNagrSlider.value / 12
+                reductor.n_defomValue = gradNagrSlider.value / 35
+
+                reductor.dvigAngle = - gradDvigSlider.value / 5
+                reductor.d_deformValue = gradDvigSlider.value / 20
+
+            }
+        }
+        PropertyAnimation { id: animationDvigIndicator;
+            easing.type: Easing.OutElastic
+            easing.amplitude: 2.0
+            easing.period: 1.5
+            target: reductor
+            property: "dvigIndicatorAngle";
+            paused: false
+            duration: 0
+            alwaysRunToEnd: true
+            loops: 1
+            running: false
+            from: 0;
+            to: 360;
+        }
+        PropertyAnimation { id: animationDvigSmallIndicator;
+            easing.type: Easing.OutElastic
+            easing.amplitude: 2.0
+            easing.period: 1.5
+            target: reductor
+            property: "dvigSmallIndicatorAngle";
+            paused: false
+            duration: 0
+            alwaysRunToEnd: true
+            loops: 1
+            running: false
+            from: 0;
+            to: 360;
+        }
+        PropertyAnimation { id: animationNagrIndicator;
+            easing.type: Easing.OutElastic
+            easing.amplitude: 2.0
+            easing.period: 1.5
+            target: reductor
+            property: "nagrIndicatorAngle";
+            paused: false
+            duration: 0
+            alwaysRunToEnd: true
+            loops: 1
+            running: false
+            from: 0;
+            to: 360;
+        }
+        PropertyAnimation { id: animationNagrSmallIndicator;
+            easing.type: Easing.OutElastic
+            easing.amplitude: 2.0
+            easing.period: 1.5
+            target: reductor
+            property: "nagrSmallIndicatorAngle";
+            paused: false
+            duration: 0
+            alwaysRunToEnd: true
+            loops: 1
+            running: false
+            from: 0;
+            to: 360;
+        }
+        PropertyAnimation { id: animationReductorAngle;
+            easing.type: Easing.Linear
+            target: reductor
+            property: "animationAngle";
+            paused: false
+            duration: 0
+            alwaysRunToEnd: true
+            loops: 0
+            running: false
+            from: 0;
+            to: 360;
+        }
+
+        PropertyAnimation { id: animationtachIndicatorAngle;
+            easing.type: Easing.Linear
+            target: reductor
+            property: "tachIndicatorAngle";
+            paused: false
+            duration: 0
+            alwaysRunToEnd: true
+            loops: 1
+            running: false
+            from: 0;
+            to: 360;
+        }
+
+
+
+        ColumnLayout {
+            id: tarirovkaLayout
+            x: 1125
+            y: 235
+            visible: false
+            Switch {
+                id: gradModeDvig
+                text: qsTr("Вставить градуировочный рычаг в двигатель")
+                onToggled: reductor.graduirovkaDvigMode = gradModeDvig.checked
+                onReleased: {
+                    gradDvigSlider.value = 0
+                    reductor.graduirovkaDvigLength = 0
+                }
+                onCheckedChanged: {
+                    if (gradModeDvig.checked) {
+                        // Включить таймер
+                        tarirovkaTimer.running = true
+                        tarirovkaTimer.start()
+                    } else {
+                        // Выключить таймер
+                        tarirovkaTimer.running = false
+                        tarirovkaTimer.stop()
+
+                    }
+                }
+            }
+
+            Text {
+                id: gradDvigText
+                color: "#ffffff"
+                text: qsTr("Плечо: 0cм ")
+                font.pixelSize: 22
+            }
+
+            Slider {
+                id: gradDvigSlider
+                stepSize: 3
+                snapMode: RangeSlider.SnapAlways
+                value: 0
+                onValueChanged: {
+
+                    gradDvigText.text = "Плечо: " + gradDvigSlider.value + "см"
+                    reductor.graduirovkaDvigLength = gradDvigSlider.value/3
+                }
+                live: true
+                to: 21
+            }
+
+            Switch {
+                id: gradModeNagr
+                text: qsTr("Вставить градуировочный рычаг в нагрузку")
+                onToggled: function(){
+                    reductor.graduirovkaNagrMode = gradModeNagr.checked
+                }
+                onCheckedChanged: {
+                    if (gradModeNagr.checked) {
+                        // Включить таймер
+                        tarirovkaTimer.running = true
+                        tarirovkaTimer.start()
+                    } else {
+                        // Выключить таймер
+                        tarirovkaTimer.running = false
+                        tarirovkaTimer.stop()
+
+                    }
+                }
+                onReleased: function(){
+                    gradNagrSlider.value = 0
+                    reductor.graduirovkaNagrLength = 0
+                }
+
+            }
+
+            Text {
+                id: gradNagrText
+                color: "#ffffff"
+                text: qsTr("Плечо: 0cм ")
+                font.pixelSize: 22
+            }
+
+            Slider {
+                id: gradNagrSlider
+                stepSize: 3
+                snapMode: RangeSlider.SnapAlways
+                value: 0
+                onValueChanged: {gradNagrText.text = "Плечо: " + gradNagrSlider.value + "см"
+                    reductor.graduirovkaNagrLength = gradNagrSlider.value/3
+                }
+                live: true
+                to: 21
+            }
+        }
+
+
+        Switch {
+            x: 1125
+            y: 195
+            id: tarirovkaSwitch
+            text: qsTr("Перейти в режим тарировки")
+            onCheckedChanged: {
+                if (tarirovkaSwitch.checked) {
+                    tarirovkaLayout.visible = true
+                } else {
+                    tarirovkaLayout.visible = false
+                }
+            }
+
+        }
+
+        ElectromechanicalSystem {
+            id: electromechanicalSystem
+        }
+
+        ColumnLayout {
+            x: 91
+            y: 0
+            ColumnLayout {
+                RowLayout {
+                    RowLayout {
+                        Button {
+                            id: button
+                            text: "Запустить двигатель"
+                            onClicked: function(){
+                                started = true
+
+
+                            }
+                        }
+
+                        Button {
+                            text: "Остановить двигатель"
+                            onClicked: function(){
+                                started = False
+
+                                w = 0
+                                kpd = 0
+                                M_dvig = 0
+                                animationNagrIndicator.to = 0
+                                animationNagrIndicator.duration = 800
+                                animationNagrIndicator.running = true
+
+                                animationNagrSmallIndicator.to = 0
+                                animationNagrSmallIndicator.duration = 800
+                                animationNagrSmallIndicator.running = true
+
+                                animationDvigIndicator.to = 0
+                                animationDvigIndicator.duration = 800
+                                animationDvigIndicator.running = true
+
+                                animationDvigSmallIndicator.to = 0
+                                animationDvigSmallIndicator.duration = 800
+                                animationDvigSmallIndicator.running = true
+
+
+                                animationReductorAngle.to = 360
+                                animationReductorAngle.duration = 1/(w*100/60)
+                                animationReductorAngle.running = true
+                                animationReductorAngle.loops = 5
+
+                                animationtachIndicatorAngle.to = w*360/17
+                                animationtachIndicatorAngle.duration = 800
+                                animationtachIndicatorAngle.running = true
+
+
+
+                                reductor.nagrAngle = 0
+                                reductor.n_defomValue = 0
+
+                                reductor.dvigAngle = 0
+                                reductor.d_deformValue = 0
+
+
+
+
+
+
+
+                            }
+                        }
+                    }
+
+                    ColumnLayout {
+                        /*Label {
+                            id: labelWDvig
+                            text: "wdvig = 0"
+                            Layout.preferredWidth: 159
+                            Layout.preferredHeight: 29
+                        }
+
+                        Label {
+                            id: labelMEngine
+                            x: 450
+                            y: 59
+                            text: "M_engine = 0"
+                        }*/
+
+                        ColumnLayout {
+                            Label {
+                                id: labelSliderLoad
+                                text: qsTr("Изменить момент нагрузки")
+                            }
+
+                            /*Label {
+                                id: testLabel
+                                text: sliderLoad.value
+                            }*/
+
+                            Slider {
+                                id: sliderLoad
+                                signal valueChanged (int value)
+                                stepSize: 0.5
+                                to: 100
+                                from: 0
+                                value:0
+                                onMoved: {
+                                    if (started){
+                                    w = electromechanicalSystem.get_w(sliderLoad.value,sliderVoltage.value)
+                                    kpd = electromechanicalSystem.get_kpd(sliderLoad.value,sliderVoltage.value,w)
+                                    M_dvig = sliderLoad.value*K_load/(kpd*i)
+                                    animationNagrIndicator.to = - sliderLoad.value *ind2angl
+                                    animationNagrIndicator.duration = 800
+                                    animationNagrIndicator.running = true
+
+                                    animationNagrSmallIndicator.to = sliderLoad.value *sind2angl
+                                    animationNagrSmallIndicator.duration = 800
+                                    animationNagrSmallIndicator.running = true
+
+
+
+                                    animationDvigIndicator.to = M_dvig/K_dvig *ind2angl
+                                    animationDvigIndicator.duration = 800
+                                    animationDvigIndicator.running = true
+
+                                    animationDvigSmallIndicator.to = M_dvig/K_dvig *sind2angl
+                                    animationDvigSmallIndicator.duration = 800
+                                    animationDvigSmallIndicator.running = true
+
+
+                                    animationReductorAngle.to = 360
+                                    animationReductorAngle.duration = 1/(w*100/60)
+                                    animationReductorAngle.running = true
+                                    animationReductorAngle.loops = 5
+
+                                    animationtachIndicatorAngle.to = w*360/17
+                                    animationtachIndicatorAngle.duration = 800
+                                    animationtachIndicatorAngle.running = true
+
+
+
+                                    reductor.nagrAngle = 0
+                                    reductor.n_defomValue = 0
+
+                                    reductor.dvigAngle = 0
+                                    reductor.d_deformValue = 0
+
+                                            label.text = " eta = " + kpd
+                                    }
+                                }
+                            }
+                        }
+
+                        ColumnLayout {
+                            Label {
+                                id: labelSliderVoltage
+                                text: qsTr("Изменить напряжение")
+                            }
+
+                            Slider {
+                                id: sliderVoltage
+                                stepSize: 0.5
+                                to: 100
+                                value: 0
+                                from: 0
+                            }
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.preferredWidth: 914
+                    x: 0
+                    y: 150
+
+
+                    Text {
+                        id: text1
+                        text: "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\nhr { height: 1px; border-width: 0; }\nli.unchecked::marker { content: \"\\2610\"; }\nli.checked::marker { content: \"\\2612\"; }\n</style></head><body style=\" font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;\">\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:20pt; color:#ffffff;\">Переместить камеру к:</span></p></body></html>"
+                        font.pixelSize: 12
+                        textFormat: Text.RichText
+                    }
+
+                    RowLayout {
+                        Button {
+                            id: button1
+                            text: qsTr("Индикатор тахометра")
+                            Connections {
+                                target: button1
+                                onClicked: {
+                                    sceneCamera.x = -642.38409423
+                                    sceneCamera.y = 144.273193359375
+                                    sceneCamera.z = -73.0282974243164
+                                    sceneCamera.eulerRotation.x = -4.143229
+                                    sceneCamera.eulerRotation.y = -89.21750
+                                }
+                            }
+                        }
+
+                        Button {
+                            id: button2
+                            text: qsTr("Индикатор момента двигателя")
+                            Connections {
+                                target: button2
+                                onClicked: {
+                                    sceneCamera.x = -255.803955078
+                                    sceneCamera.y = 205.07485961914
+                                    sceneCamera.z = 54.17390441894531
+                                    sceneCamera.eulerRotation.x = -3.3305914402
+                                    sceneCamera.eulerRotation.y = -0.5
+                                }
+                            }
+                        }
+
+                        Button {
+                            id: button3
+                            text: qsTr("Индикатор момента нагрузки")
+                            onClicked: {
+                                sceneCamera.x = 226.31359
+                                sceneCamera.y = 205.55165
+                                sceneCamera.z = 34.576713
+                                sceneCamera.eulerRotation.x = -3.3305914402
+                                sceneCamera.eulerRotation.y = -0.5
+                            }
+                        }
+
+                        Button {
+                            id: button4
+                            text: qsTr("Общий вид")
+                            onClicked: {
+                                sceneCamera.x = -43.01
+                                sceneCamera.y = 433.34509
+                                sceneCamera.z = 324.28134
+                                sceneCamera.eulerRotation.x = -37.310100
+                                sceneCamera.eulerRotation.y = 1.1856462955
+                            }
+                        }
+
+                        Button {
+                            id: button5
+                            text: qsTr("Редуктор")
+                            onClicked: {
+                                sceneCamera.x = -21.201
+                                sceneCamera.y = 200.537
+                                sceneCamera.z = 105.57
+                                sceneCamera.eulerRotation.x = -26.8339958
+                                sceneCamera.eulerRotation.y = -0.905661940
+                            }
+                        }
+                    }
+                    Layout.preferredHeight: 89
+                }
+            }
+
+
+        }
+
+        Rectangle {
+            id: rectangle
+            x: 8
+            y: 278
+            width: 1100
+            height: 700
+            visible: true
+            color: "#000000"
+            radius: 100
+            focus: false
+            activeFocusOnTab: false
+            layer.smooth: false
+            smooth: true
+        }
+        View3D {
+            id: view3D
+            x: 58
+            y: 328
+            width: 1000
+            height: 600
+            activeFocusOnTab: false
+            focus: false
+
+
+            Node {
+                id: scene
+                PointLight {
+                    id: backLight
+                    x: 13.058
+                    y: 428.835
+                    color: "#ffffff"
+                    ambientColor: "#343333"
+                    z: -170.18332
+                    brightness: 50
+                }
+                PointLight {
+                    id: frontLight
+                    x: 13.062
+                    y: 428.835
+                    color: "#ffffff"
+                    ambientColor: "#343333"
+                    z: 170.18332
+                    brightness: 50
+                }
+                PointLight {
+                    id: leftLight
+                    x: 577.002
+                    y: 428.835
+                    color: "#ffffff"
+                    ambientColor: "#343333"
+                    z: -170.18333
+                    brightness: 50
+                }
+                PointLight {
+                    id: rightLight
+                    x: -705.184
+                    y: 428.835
+                    color: "#ffffff"
+                    ambientColor: "#343333"
+                    z: -170.18333
+                    brightness: 50
+                }
+
+                PerspectiveCamera {
+                    id: sceneCamera
+                    x: 31.535
+                    y: 130.822
+                    z: 155.88931
+                }
+            }
+            environment: sceneEnvironment
+            SceneEnvironment {
+                id: sceneEnvironment
+                backgroundMode: SceneEnvironment.Color
+                clearColor: "#cdf3ec"
+                antialiasingQuality: SceneEnvironment.Medium
+                antialiasingMode: SceneEnvironment.NoAA
+            }
+
+
+            Reductor {
+                id: reductor
+                x: -67.028
+                y: 0
+                n_defomValue: 0.9
+
+                graduirovkaNagrMode: false
+                graduirovkaDvigMode: false
+                z: -75.33374
+                dvigIndicatorAngle: 90.8
+                animationAngle: 4.6
+            }
+            WasdController {
+                id: wasdController
+                x: -86
+                y: -50
+                width: 1149
+                height: 699
+                controlledObject: sceneCamera
+            }
+
+
+
+        }
+
+
+
+
+
+
+    }
+
+    Label {
+        id: label
+        x: 843
+        y: 58
+        width: 77
+        height: 32
+        text: qsTr("Label")
+    }
+}

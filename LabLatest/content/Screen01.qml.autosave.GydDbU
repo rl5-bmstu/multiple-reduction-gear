@@ -1,0 +1,277 @@
+import QtQuick 6.2
+import QtQuick.Controls 6.2
+import LabLatest
+import QtQuick3D
+import Quick3DAssets.Untitled
+import QtQuick3D.Helpers 6.4
+import com.example 1.0
+
+import QtQuick.Layouts 6.3
+import QtQuick.Controls
+import QtQuick.Studio.Components 1.0
+
+Rectangle {
+    width: Constants.width
+    height: Constants.height
+
+    color: Constants.backgroundColor
+
+
+    Item {
+        id: __materialLibrary__
+
+        DefaultMaterial {
+            id: defaultMaterial
+            objectName: "New Material"
+        }
+    }
+
+
+    /*Slider {
+        id: sliderSpeed
+        x: 103
+        y: 218
+        width: 624
+        height: 48
+        clip: false
+        layer.enabled: false
+        from: 0
+        to: 100000
+        value: 0
+
+        Connections {
+            target: sliderSpeed
+            onMoved: {
+
+                animation.duration = sliderSpeed.value
+                animation.restart()
+            }
+
+        }
+
+
+
+    }   */
+
+
+    Item {
+        Timer {
+            id: animationTimer
+            interval: 100
+            running: false
+            repeat: true
+            onTriggered: function(){
+                animation.duration = 1000 / (electromechanicalSystem.getWout() * 3.141/30)
+                animation.restart()
+            }
+        }
+
+        Timer {
+            id: myTimer
+            interval: 10 // интервал таймера в миллисекундах
+            running: false // таймер остановлен при запуске
+            repeat: true // повторять таймер после каждого истечения времени
+            onTriggered: function(){
+                //electromechanicalSystem.start()
+                var startTime = new Date().getTime();
+                for (var i = 0; i <=1000; i++){
+                    electromechanicalSystem.calculateNextStep(sliderVoltage.value,sliderLoad.value,0.00005)
+                }
+                var endTime = new Date().getTime();
+                var duration = endTime - startTime;
+                console.log("Время выполнения: " + duration + " мс");
+                labelWOut.text = "w = " + Math.round((electromechanicalSystem.getWout()) * 100) / 100
+
+            }
+        }
+        ElectromechanicalSystem {
+            id: electromechanicalSystem
+        }
+
+        ColumnLayout {
+            x: 91
+            y: 125
+            RowLayout {
+                RowLayout {
+                    Button {
+                        text: "Запустить симуляцию"
+                        onClicked: function(){
+                            myTimer.running = true
+                            animationTimer.running = true
+                        }
+                    }
+
+                    Button {
+                        text: "Остановить симуляцию"
+                        onClicked: function(){
+                            myTimer.running = false
+                            animationTimer.running = false
+                            //electromechanicalSystem.quit()
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    Label {
+                        id: labelSliderLoad
+                        text: qsTr("Изменить момент нагрузки")
+                    }
+
+                    Slider {
+                        id: sliderLoad
+                        signal valueChanged (int value)
+                        onValueChanged: valueChanged(value)
+                        to: 100
+                        from: 0
+                        style: SliderStyle {
+                            groove: Rectangle {
+                                implicitWidth: 200
+                                implicitHeight: 8
+                                color: "gray"
+                                radius: 8
+                            }
+                            handle: Rectangle {
+                                anchors.centerIn: parent
+                                color: control.pressed ? "white" : "lightgray"
+                                border.color: "gray"
+                                border.width: 2
+                                implicitWidth: 34
+                                implicitHeight: 34
+                                radius: 12
+                            }
+                        }
+
+                    }
+                }
+                Label {
+                    id: labelWOut
+                    text: "w = 0"
+                    Layout.preferredHeight: 29
+                    Layout.preferredWidth: 159
+                }
+                Slider {
+                    id: sliderVoltage
+                    from: 0
+                    to: 311.1269
+                    value: 311.1269
+
+                }
+            }
+
+
+        }
+    }
+
+    Rectangle {
+        id: rectangle
+        x: 19
+        y: 284
+        width: 1100
+        height: 700
+        visible: true
+        color: "#000000"
+        radius: 100
+        focus: false
+        activeFocusOnTab: false
+        layer.smooth: false
+        smooth: true
+    }
+    View3D {
+        id: view3D
+        x: 69
+        y: 334
+        width: 1000
+        height: 600
+        activeFocusOnTab: false
+        focus: false
+
+        Node {
+            id: scene
+            PointLight {
+                id: backLight
+                x: 13.058
+                y: 428.835
+                color: "#ffffff"
+                ambientColor: "#343333"
+                z: -170.18332
+                brightness: 50
+            }
+            PointLight {
+                id: frontLight
+                x: 13.062
+                y: 428.835
+                color: "#ffffff"
+                ambientColor: "#343333"
+                z: 170.18332
+                brightness: 50
+            }
+            PointLight {
+                id: leftLight
+                x: 577.002
+                y: 428.835
+                color: "#ffffff"
+                ambientColor: "#343333"
+                z: -170.18333
+                brightness: 50
+            }
+            PointLight {
+                id: rightLight
+                x: -705.184
+                y: 428.835
+                color: "#ffffff"
+                ambientColor: "#343333"
+                z: -170.18333
+                brightness: 50
+            }
+
+            PerspectiveCamera {
+                id: sceneCamera
+                x: 31.535
+                y: 130.822
+                z: 155.88931
+            }
+        }
+        environment: sceneEnvironment
+        SceneEnvironment {
+            id: sceneEnvironment
+            antialiasingQuality: SceneEnvironment.High
+            antialiasingMode: SceneEnvironment.MSAA
+        }
+
+        Untitled {
+            id: untitled
+            gradus: 8.5
+
+        }
+
+        WasdController {
+            id: wasdController
+            x: -74
+            y: -50
+            width: 1149
+            height: 699
+            controlledObject: sceneCamera
+        }
+
+        PropertyAnimation { id: animation;
+            target: untitled;
+            property: "gradus";
+            paused: false
+            duration: 0
+            alwaysRunToEnd: false
+            loops: -1
+            running: true
+            from: 0;
+            to: 360;
+        }
+    }
+    
+    BorderItem {
+        id: border1
+        x: 103
+        y: 240
+    }
+
+}
+
+
